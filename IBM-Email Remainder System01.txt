@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IBM Email Reminder System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #0f62fe;
+    }
+    form {
+      background: white;
+      max-width: 500px;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 8px #ccc;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 6px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #0f62fe;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin-top: 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover {
+      background: #0353e9;
+    }
+    #reminders {
+      max-width: 700px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 8px #ccc;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background: #0f62fe;
+      color: white;
+    }
+    .sent {
+      color: green;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>IBM Email Reminder System</h1>
+  
+  <form id="reminderForm">
+    <label for="email">Your Email:</label>
+    <input type="email" id="email" name="email" required />
+
+    <label for="message">Reminder Message:</label>
+    <textarea id="message" name="message" rows="3" required></textarea>
+
+    <label for="datetime">Date and Time:</label>
+    <input type="datetime-local" id="datetime" name="datetime" required />
+
+    <button type="submit">Set Reminder</button>
+  </form>
+
+  <div id="reminders">
+    <h2>Scheduled Reminders</h2>
+    <table id="reminderTable">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Message</th>
+          <th>Date & Time</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    async function fetchReminders() {
+      const res = await fetch('/reminders');
+      const data = await res.json();
+      const tbody = document.querySelector('#reminderTable tbody');
+      tbody.innerHTML = '';
+      data.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.email}</td>
+          <td>${r.message}</td>
+          <td>${r.datetime}</td>
+          <td class="${r.sent ? 'sent' : ''}">${r.sent ? 'Sent' : 'Pending'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('reminderForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const message = document.getElementById('message').value;
+      const datetime = document.getElementById('datetime').value;
+
+      const res = await fetch('/add_reminder', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email, message, datetime})
+      });
+      const result = await res.json();
+      if(result.success) {
+        alert('Reminder set successfully!');
+        fetchReminders();
+        e.target.reset();
+      } else {
+        alert('Error: ' + (result.error || 'Unknown error'));
+      }
+    });
+
+    // Load reminders on page load
+    fetchReminders();
+    // Refresh reminders every 20 seconds
+    setInterval(fetchReminders, 20000);
+  </script>
+</body>
+</html>
